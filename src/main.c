@@ -52,7 +52,7 @@
  * are on as well. 
  */
 
-#define SIZE 15 
+#define SIZE 6 
 
 void print_table(const int table[SIZE][SIZE]) {
     int x,y;
@@ -137,10 +137,6 @@ void held_karp(const int dist[SIZE][SIZE], int start) {
      *    INT_MAX). This could (probably) be improved by allocating memory
      *    dynamically - or if the points are on an X,Y grid calculating the
      *    distance (manhattan) instead of storing the costs.
-     * 
-     * Idea: If I do stre the points on a cartesian grid, I could make a simple
-     * graphic representation using tools from the Toolbox project (specifically
-     * the terminal display and bresenham's line code) 
      */
     int dp[1 << SIZE][SIZE]; // 1 << SIZE is a neat way of saying 2 raised to the SIZE
     int prev[1 << SIZE][SIZE];
@@ -247,18 +243,6 @@ int main(int argc, char** argv) {
         {60, 90, 55, 25, 0} // E
     };
     */
-    /*
-    // SIZE 6
-    int dist[SIZE][SIZE] = {
-        { 0,  50,  80,  30, 120, 200 },  // A
-        { 50,  0,  60, 100,  70,  90 },  // B
-        { 80, 60,  0,  20,  50,  40 },  // C
-        { 30, 100, 20,  0,  90,  60 },  // D
-        { 120, 70, 50,  90,  0,  30 },  // E
-        { 200, 90, 40,  60,  30,  0 }   // F
-    };
-    */
-    /*
     // SIZE 6
     int dist[SIZE][SIZE] = {
         {  0,  10,  15,  30,  40,  50 },  // A
@@ -268,7 +252,7 @@ int main(int argc, char** argv) {
         { 40,  20,  50,  30,   0,  15 },  // E
         { 50,  60,  70,  80,  15,   0 }   // F
     };
-    */
+    /*
     // SIZE 15
     int dist[SIZE][SIZE] = {
         {  0,  10,  15,  30,  100,  200,  90,  120,  80,  110,  150,  70,  130,  160,  180 },  // A
@@ -287,6 +271,7 @@ int main(int argc, char** argv) {
         { 160, 60,  50,  35,  50,  10,  20,  60,  60,  80,  30,  25,  15,   0,  10 },  // N
         { 180, 80,  70,  50,  40,  15,  25,  80,  70,  90,  40,  35,  25,  10,   0 }   // O
     };
+    */
     /*
     // Size 20 - Stack size needs to be increased for this to work
     const int dist[SIZE][SIZE] = {

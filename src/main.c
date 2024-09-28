@@ -34,11 +34,13 @@ typedef enum {
 } AppStates;
 
 
-int g_state = STATE_EXAMPLE;
+int g_state = STATE_MENU;
+TSP_Data *g_data = NULL;
 
 bool handle_events(void);
 void update(void);
 void draw(void);
+void generate_example(void);
 
 int main(int argc, char** argv) {
     /*
@@ -48,28 +50,11 @@ int main(int argc, char** argv) {
      * path... eventually.
      */
     bool running = true;
-    // SIZE 6
-    int dist[SIZE][SIZE] = {
-        {  0,  10,  15,  30,  40,  50 },  // A
-        { 10,   0,  35,  25,  20,  60 },  // B
-        { 15,  35,   0,  10,  50,  70 },  // C
-        { 30,  25,  10,   0,  30,  80 },  // D
-        { 40,  20,  50,  30,   0,  15 },  // E
-        { 50,  60,  70,  80,  15,   0 }   // F
-    };
-
     // Initialize the terminal and screenbuffer
     term_init();
     init_screenbuf();
+    g_data = init_tsp_data();
 
-    TSP_Path *hkpath = held_karp(dist, 0);
-    destroy_tsp_path(hkpath);
-    //print_table(dist);
-    //printf("Nearest Neighbor Heuristic:\n");
-    //nearest_neighbor(dist);
-    //printf("Held-Karp Algorithm:\n");
-    //held_karp(dist, 0);
-    
     // Main Loop
     scr_clear();
     draw(); // This advances with keypresses, so need to draw the screen before entering loop
@@ -80,6 +65,7 @@ int main(int argc, char** argv) {
     }
     
     // Destroy the screen buffer and return the terminal
+    destroy_tsp_data(g_data);
     close_screenbuf();
     term_close();
     return 0;
@@ -88,8 +74,9 @@ int main(int argc, char** argv) {
 bool handle_events(void) {
     char ch = '\0';
     bool result = true;
+    SList *menu = NULL;
     if(g_state == STATE_MENU) {
-        SList *menu = create_slist("The Traveling Salesman Problem! - Example Program");
+        menu = create_slist("The Traveling Salesman Problem! - Example Program");
         slist_push(&menu,"Zach Wilder, 2024");
         slist_push(&menu,"abq");
         slist_push(&menu,"Generate new example");
@@ -99,8 +86,7 @@ bool handle_events(void) {
         ch = draw_menu_basic(menu);
         switch(ch) {
             case 'a': 
-                //Print L O A D I N G in center of screen
-                //Generate paths
+                generate_example();
                 g_state = STATE_EXAMPLE;
                 break;
             case 'b':
@@ -111,11 +97,13 @@ bool handle_events(void) {
                 break;
             default: break;
         }
+        destroy_slist(&menu);
     } else if (g_state == STATE_INFO) {
         ch = kb_get_bl_char();
         if(ch == 'q') {
             result = false;
         }
+        g_state = STATE_MENU;
     } else if (g_state == STATE_EXAMPLE) {
         ch = kb_get_bl_char();
         if(ch == 'q') {
@@ -133,6 +121,8 @@ void update(void) {
 
 void draw(void) {
     clear_screen(g_screenbuf);
+    SList *str = NULL, *strtmp = NULL;
+    int i = 0;
     if(g_state == STATE_EXAMPLE) {
         draw_colorstr(0,0,"EXAMPLE STATE!",mt_rand(RED,WHITE),BLACK);
         //Display pretty table
@@ -144,9 +134,81 @@ void draw(void) {
          * is Y
          */
     } else if (g_state == STATE_INFO) {
-        draw_str(0,0,"Info state.");
+        draw_hline(0,0,SCREEN_WIDTH,BRIGHT_BLACK);
+        i = SCREEN_WIDTH/2 - 27;
+        draw_colorstr(i,0,"What the heck is this? The Traveling Salesman Problem.",WHITE,BRIGHT_BLACK);
+        str = slist_linewrap(
+            "Given a list of n cities and the distances between each pair of cities, what is the shortest possible route that visits each city exactly once and returns to the origin city?"
+            ,75);
+        slist_push(&str, " ");
+        slist_push(&str, "Solutions:");
+        slist_push(&str, " - Brute force O(n!) - Exact solution, can get out of hand when n > 11");
+        slist_push(&str, " - Nearest Neighbor Heuristic O(n^2) - Approximate, doesn't guarantee");
+        slist_push(&str, "   shortest path (Averages about 25 percent less efficient than an ");
+        slist_push(&str, "   exact solution)");
+        slist_push(&str, " - Held-Karp Algorithm O(n^2 * 2n) - Exact solution");
+        slist_push(&str, " ");
+        slist_push(&str, "Fun note: For N locations, there are N!/(2^N) solutions to this problem");
+        slist_push(&str, "(assuming the distance between two individual locations is the same forward as");
+        slist_push(&str, "backward - B to C is the same as C to B, etc). At 20 locations this is");
+        slist_push(&str, "2,375,880,867,360,000 - or two quadrillion, three hundred seventy-five trillion,");
+        slist_push(&str, "eight hundred eighty billion, eight hundred sixty-seven million, three hundred");
+        slist_push(&str, "sixty thousand possible combinations. ");
+        slist_push(&str, " ");
+        slist_push(&str, "The SIZE (n) is currently: %d ", SIZE);
+        strtmp = str;
+        i = 0;
+        while(strtmp) {
+            draw_str(0,2+i,strtmp->data);
+            i++;
+            strtmp = strtmp->next;
+        }
     }
     draw_screen(g_screenbuf);
+    destroy_slist(&str);
+}
+
+void generate_example(void) {
+    // Make a distance table
+    // Temporary, before we start using random numbers for x,y points and
+    // finding distances using man_dist(A,B)
+    int x,y;
+    // SIZE 6
+    if(!g_data) return;
+    int dist[SIZE][SIZE] = {
+        {  0,  10,  15,  30,  40,  50 },  // A
+        { 10,   0,  35,  25,  20,  60 },  // B
+        { 15,  35,   0,  10,  50,  70 },  // C
+        { 30,  25,  10,   0,  30,  80 },  // D
+        { 40,  20,  50,  30,   0,  15 },  // E
+        { 50,  60,  70,  80,  15,   0 }   // F
+    };
+
+    for(x = 0; x < SIZE; x++) {
+        for(y = 0; y < SIZE; y++) {
+            g_data->dist[x][y] = dist[x][y];
+        }
+    }
+
+    //Print L O A D I N G in center of screen
+    //(This doesn't show up at all if it goes quick, but for large SIZE it looks
+    //nice)
+    clear_screen(g_screenbuf);
+    draw_colorstr(g_screenW/2 - 6, g_screenH, 
+            "L O A D I N G", 
+            mt_rand(BRIGHT_BLACK, BRIGHT_WHITE), BLACK);
+    draw_screen(g_screenbuf);
+    //Generate paths
+    g_data->hk_path = held_karp(g_data->dist,0);
+    
+    //TSP_Path *hkpath = held_karp(dist, 0);
+    //destroy_tsp_path(hkpath);
+    //print_table(dist);
+    //printf("Nearest Neighbor Heuristic:\n");
+    //nearest_neighbor(dist);
+    //printf("Held-Karp Algorithm:\n");
+    //held_karp(dist, 0);
+
 }
 
 /*

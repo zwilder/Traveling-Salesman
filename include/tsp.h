@@ -48,22 +48,33 @@
  *****/
 
 typedef struct TSP_Path TSP_Path;
+typedef struct TSP_Data TSP_Data;
 
 struct TSP_Path {
     int cost;
     int path[SIZE + 1];
 };
 
+struct TSP_Data {
+    int **dist;
+    TSP_Path *hk_path;
+    TSP_Path *nn_path;
+    int pos;
+};
+
 /*****
  * TSP Functions
  *****/
-TSP_Path* make_path(int path[SIZE + 1], int cost);
+TSP_Path* make_tsp_path(int path[SIZE + 1], int cost);
 void destroy_tsp_path(TSP_Path *path);
+
+TSP_Data* init_tsp_data(void);
+void destroy_tsp_data(TSP_Data *data);
 
 void print_table(const int table[SIZE][SIZE]);
 void print_path(const int path[SIZE], int cost);
 int find_nearest_neighbor(const int cur, const int table[SIZE][SIZE], const bool visited[SIZE]);
 void nearest_neighbor(const int dist[SIZE][SIZE]);
-TSP_Path* held_karp(const int dist[SIZE][SIZE], int start);
+TSP_Path* held_karp(int **dist, int start);
 
 #endif //TSP_H

@@ -89,7 +89,7 @@ void nearest_neighbor(const int dist[SIZE][SIZE]) {
     print_path(path, cost);
 }
 
-TSP_Path* held_karp(const int dist[SIZE][SIZE], int start) {
+TSP_Path* held_karp(int **dist, int start) {
     /*
      * Held-Karp Algorithm - Dynamic Programming
      * This uses some bitmath magic to keep track of path costs/visited nodes
@@ -227,10 +227,10 @@ TSP_Path* held_karp(const int dist[SIZE][SIZE], int start) {
         free(prev);
     }
     
-    return make_path(path, result);
+    return make_tsp_path(path, result);
 }
 
-TSP_Path* make_path(int path[SIZE + 1], int cost) {
+TSP_Path* make_tsp_path(int path[SIZE + 1], int cost) {
     TSP_Path *newpath = malloc(sizeof(TSP_Path));
     
     int i = 0;
@@ -246,4 +246,34 @@ void destroy_tsp_path(TSP_Path *path) {
     if(path) {
         free(path);
     }
+}
+
+TSP_Data* init_tsp_data(void) {
+    int i = 0;
+    TSP_Data *data = malloc(sizeof(TSP_Data));
+    data->dist = malloc(SIZE * sizeof(int *));
+    for(i = 0; i < SIZE; i++) {
+        data->dist[i] = malloc(SIZE * sizeof(int));
+    }
+    data->hk_path = NULL;
+    data->nn_path = NULL;
+    data->pos = 0;
+    return data;
+}
+
+void destroy_tsp_data(TSP_Data *data) {
+    int i = 0;
+    if(!data) return;
+    if(data->dist) {
+        for(i = 0; i < SIZE; i++) {
+            if(data->dist[i]) {
+                free(data->dist[i]);
+            }
+        }
+        free(data->dist);
+    }
+    destroy_tsp_path(data->hk_path);
+    destroy_tsp_path(data->nn_path);
+
+    free(data);
 }

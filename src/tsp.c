@@ -89,7 +89,7 @@ void nearest_neighbor(const int dist[SIZE][SIZE]) {
     print_path(path, cost);
 }
 
-void held_karp(const int dist[SIZE][SIZE], int start) {
+TSP_Path* held_karp(const int dist[SIZE][SIZE], int start) {
     /*
      * Held-Karp Algorithm - Dynamic Programming
      * This uses some bitmath magic to keep track of path costs/visited nodes
@@ -116,14 +116,14 @@ void held_karp(const int dist[SIZE][SIZE], int start) {
     prev = malloc((1 << SIZE) * sizeof(int *));
     if(!dp || !prev) {
         printf("Failed to allocate memory for dp/prev!\n");
-        return;
+        return NULL;
     }
     for(i = 0; i < (1 << SIZE); i++) {
         dp[i] = malloc(SIZE * sizeof(int));
         prev[i] = malloc(SIZE * sizeof(int));
         if(!(dp[i]) || !(prev[i])) {
             printf("Failed to allocate memory for [%d]!\n",i);
-            return;
+            return NULL;
         }
     }
 
@@ -209,7 +209,7 @@ void held_karp(const int dist[SIZE][SIZE], int start) {
     path[0] = start;
 
     // Print the results!
-    print_path(path, result);
+    //print_path(path, result);
 
     // Free allocated memory
     for(i = 0; i < (1 << SIZE); i++) {
@@ -225,5 +225,25 @@ void held_karp(const int dist[SIZE][SIZE], int start) {
     }
     if(prev) {
         free(prev);
+    }
+    
+    return make_path(path, result);
+}
+
+TSP_Path* make_path(int path[SIZE + 1], int cost) {
+    TSP_Path *newpath = malloc(sizeof(TSP_Path));
+    
+    int i = 0;
+    for(i = 0; i < (SIZE + 1); i++) {
+        newpath->path[i] = path[i];
+    }
+
+    newpath->cost = cost;
+    return newpath;
+}
+
+void destroy_tsp_path(TSP_Path *path) {
+    if(path) {
+        free(path);
     }
 }

@@ -17,8 +17,10 @@
 * You should have received a copy of the GNU General Public License
 * along with TSP.  If not, see <http://www.gnu.org/licenses/>.
 */
+#ifndef TSP_H
+#define TSP_H
 
-#define SIZE 20
+#define SIZE 6
 
 /*****
  * System
@@ -35,14 +37,33 @@
  *****/
 #include <mt19937.h>
 #include <vec2i.h>
+#include <rect.h>
+#include <slist.h>
 #include <term_engine.h>
 #include <glyph.h>
+#include <draw.h>
+
+/*****
+ * TSP Structures
+ *****/
+
+typedef struct TSP_Path TSP_Path;
+
+struct TSP_Path {
+    int cost;
+    int path[SIZE + 1];
+};
 
 /*****
  * TSP Functions
  *****/
+TSP_Path* make_path(int path[SIZE + 1], int cost);
+void destroy_tsp_path(TSP_Path *path);
+
 void print_table(const int table[SIZE][SIZE]);
 void print_path(const int path[SIZE], int cost);
 int find_nearest_neighbor(const int cur, const int table[SIZE][SIZE], const bool visited[SIZE]);
 void nearest_neighbor(const int dist[SIZE][SIZE]);
-void held_karp(const int dist[SIZE][SIZE], int start);
+TSP_Path* held_karp(const int dist[SIZE][SIZE], int start);
+
+#endif //TSP_H

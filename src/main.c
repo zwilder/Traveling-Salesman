@@ -20,38 +20,133 @@
 
 #include <tsp.h>
 
-// SIZE is #define'd in tsp.h
+/* 
+ * This file could (will) be cleaned up when the program is "finished". I always
+ * like main.c to be C L E A N. File currently includes the application logic
+ * (events/update/draw), state info, etc. I'll probably slap the majority of
+ * this into a "main_loop.c" file or some such later.
+ */
+
+typedef enum {
+    STATE_MENU      = 0,
+    STATE_EXAMPLE   = 1,
+    STATE_INFO      = 2
+} AppStates;
+
+
+int g_state = STATE_EXAMPLE;
+
+bool handle_events(void);
+void update(void);
+void draw(void);
 
 int main(int argc, char** argv) {
-    // Size 20 - Good example here of how much more efficient Held-Karp can be
+    /*
+     * The command line switch would be super cool to use for doing a terminal
+     * version or a graphical version... I could use SDL to draw points on a
+     * screen, then step through and draw lines between points for the optimium
+     * path... eventually.
+     */
+    bool running = true;
+    // SIZE 6
     int dist[SIZE][SIZE] = {
-        { 0,  54,  72,  38,  81,  25,  97,  66,  89,  42,  32,  75,  48,  60,  13,  84,  91,  53,  74,  18 },
-        { 54,  0,  64,  12,  95,  45,  23,  76,  85,  19,  71,  14,  37,  80,  61,  27,  39,  56,  92,  59 },
-        { 72, 64,  0,  58,  13,  92,  41,  70,  28,  49,  77,  33,  82,  93,  24,  35,  90,  17,  98,  51 },
-        { 38, 12, 58,   0,  65,  69,  55,  43,  18,  20,  63,  11,  97,  71,  31,  96,  50,  22,  86,  34 },
-        { 81, 95, 13,  65,   0,  88,  75,  54,  29,  64,  21,  99,  38,  67,  91,  62,  26,  73,  45,  93 },
-        { 25, 45, 92,  69,  88,   0,  27,  95,  14,  31,  58,  42,  90,  52,  68,  47,  44,  86,  61,  72 },
-        { 97, 23, 41,  55,  75,  27,   0,  15,  91,  89,  73,  59,  66,  81,  24,  92,  37,  48,  80,  99 },
-        { 66, 76, 70,  43,  54,  95,  15,   0,  85,  67,  94,  39,  32,  28,  50,  31,  82,  74,  53,  40 },
-        { 89, 85, 28,  18,  29,  14,  91,  85,   0,  59,  56,  96,  41,  84,  13,  38,  67,  48,  70,  79 },
-        { 42, 19, 49,  20,  64,  31,  89,  67,  59,   0,  78,  62,  57,  43,  72,  94,  25,  34,  33,  65 },
-        { 32, 71, 77,  63,  21,  58,  73,  94,  56,  78,   0,  91,  29,  85,  15,  62,  71,  47,  81,  20 },
-        { 75, 14, 33,  11,  99,  42,  59,  39,  96,  62,  91,   0,  82,  26,  87,  49,  58,  55,  40,  81 },
-        { 48, 37, 82,  97,  38,  90,  66,  32,  41,  57,  29,  82,   0,  15,  93,  44,  85,  28,  47,  74 },
-        { 60, 80, 93,  71,  67,  52,  81,  28,  84,  43,  85,  26,  15,   0,  24,  61,  75,  87,  62,  49 },
-        { 13, 61, 24,  31,  91,  68,  24,  50,  13,  72,  15,  87,  93,  24,   0,  32,  29,  36,  91,  17 },
-        { 84, 27, 35,  96,  62,  47,  92,  31,  38,  94,  62,  49,  44,  61,  32,   0,  54,  73,  28,  45 },
-        { 91, 39, 90,  50,  26,  44,  37,  82,  67,  25,  71,  58,  85,  75,  29,  54,   0,  80,  95,  61 },
-        { 53, 56, 17,  22,  73,  86,  48,  74,  48,  34,  47,  55,  28,  87,  36,  73,  80,   0,  21,  60 },
-        { 74, 92, 98,  86,  45,  61,  80,  53,  70,  33,  81,  40,  47,  62,  91,  28,  95,  21,   0,  69 },
-        { 18, 59, 51,  34,  93,  72,  99,  40,  79,  65,  20,  81,  74,  49,  17,  45,  61,  60,  69,   0 },
+        {  0,  10,  15,  30,  40,  50 },  // A
+        { 10,   0,  35,  25,  20,  60 },  // B
+        { 15,  35,   0,  10,  50,  70 },  // C
+        { 30,  25,  10,   0,  30,  80 },  // D
+        { 40,  20,  50,  30,   0,  15 },  // E
+        { 50,  60,  70,  80,  15,   0 }   // F
     };
-    print_table(dist);
-    printf("Nearest Neighbor Heuristic:\n");
-    nearest_neighbor(dist);
-    printf("Held-Karp Algorithm:\n");
-    held_karp(dist, 0);
+
+    // Initialize the terminal and screenbuffer
+    term_init();
+    init_screenbuf();
+
+    TSP_Path *hkpath = held_karp(dist, 0);
+    destroy_tsp_path(hkpath);
+    //print_table(dist);
+    //printf("Nearest Neighbor Heuristic:\n");
+    //nearest_neighbor(dist);
+    //printf("Held-Karp Algorithm:\n");
+    //held_karp(dist, 0);
+    
+    // Main Loop
+    scr_clear();
+    draw(); // This advances with keypresses, so need to draw the screen before entering loop
+    while(running) {
+        running = handle_events();
+        update();
+        draw();
+    }
+    
+    // Destroy the screen buffer and return the terminal
+    close_screenbuf();
+    term_close();
     return 0;
+}
+
+bool handle_events(void) {
+    char ch = '\0';
+    bool result = true;
+    if(g_state == STATE_MENU) {
+        SList *menu = create_slist("The Traveling Salesman Problem! - Example Program");
+        slist_push(&menu,"Zach Wilder, 2024");
+        slist_push(&menu,"abq");
+        slist_push(&menu,"Generate new example");
+        slist_push(&menu,"What is this?");
+        slist_push(&menu,"Quit");
+        clear_screen(g_screenbuf);
+        ch = draw_menu_basic(menu);
+        switch(ch) {
+            case 'a': 
+                //Print L O A D I N G in center of screen
+                //Generate paths
+                g_state = STATE_EXAMPLE;
+                break;
+            case 'b':
+                g_state = STATE_INFO;
+                break;
+            case 'q': 
+                result = false; 
+                break;
+            default: break;
+        }
+    } else if (g_state == STATE_INFO) {
+        ch = kb_get_bl_char();
+        if(ch == 'q') {
+            result = false;
+        }
+    } else if (g_state == STATE_EXAMPLE) {
+        ch = kb_get_bl_char();
+        if(ch == 'q') {
+            result = false;
+        }
+    }
+    return result;
+}
+
+void update(void) {
+    if(g_state == STATE_EXAMPLE) {
+        // Advance to next step in path
+    }
+}
+
+void draw(void) {
+    clear_screen(g_screenbuf);
+    if(g_state == STATE_EXAMPLE) {
+        draw_colorstr(0,0,"EXAMPLE STATE!",mt_rand(RED,WHITE),BLACK);
+        //Display pretty table
+
+        //Display paths under table (NN and HK)
+
+        //Highlight current location in path, and current cost in table
+        /* To highlight in table, From (previous step) is X and To (current step)
+         * is Y
+         */
+    } else if (g_state == STATE_INFO) {
+        draw_str(0,0,"Info state.");
+    }
+    draw_screen(g_screenbuf);
 }
 
 /*
@@ -97,6 +192,32 @@ int dist[SIZE][SIZE] = {
     { 130, 40,  20,  30,  55,  20,  30,  45,  45,  70,  20,  30,   0,  15,  25 },  // M
     { 160, 60,  50,  35,  50,  10,  20,  60,  60,  80,  30,  25,  15,   0,  10 },  // N
     { 180, 80,  70,  50,  40,  15,  25,  80,  70,  90,  40,  35,  25,  10,   0 }   // O
+};
+*/
+/*
+// Size 20 - Good example here of how much more efficient Held-Karp can be
+// over Nearest Neighbor
+int dist[SIZE][SIZE] = {
+    { 0,  54,  72,  38,  81,  25,  97,  66,  89,  42,  32,  75,  48,  60,  13,  84,  91,  53,  74,  18 },
+    { 54,  0,  64,  12,  95,  45,  23,  76,  85,  19,  71,  14,  37,  80,  61,  27,  39,  56,  92,  59 },
+    { 72, 64,  0,  58,  13,  92,  41,  70,  28,  49,  77,  33,  82,  93,  24,  35,  90,  17,  98,  51 },
+    { 38, 12, 58,   0,  65,  69,  55,  43,  18,  20,  63,  11,  97,  71,  31,  96,  50,  22,  86,  34 },
+    { 81, 95, 13,  65,   0,  88,  75,  54,  29,  64,  21,  99,  38,  67,  91,  62,  26,  73,  45,  93 },
+    { 25, 45, 92,  69,  88,   0,  27,  95,  14,  31,  58,  42,  90,  52,  68,  47,  44,  86,  61,  72 },
+    { 97, 23, 41,  55,  75,  27,   0,  15,  91,  89,  73,  59,  66,  81,  24,  92,  37,  48,  80,  99 },
+    { 66, 76, 70,  43,  54,  95,  15,   0,  85,  67,  94,  39,  32,  28,  50,  31,  82,  74,  53,  40 },
+    { 89, 85, 28,  18,  29,  14,  91,  85,   0,  59,  56,  96,  41,  84,  13,  38,  67,  48,  70,  79 },
+    { 42, 19, 49,  20,  64,  31,  89,  67,  59,   0,  78,  62,  57,  43,  72,  94,  25,  34,  33,  65 },
+    { 32, 71, 77,  63,  21,  58,  73,  94,  56,  78,   0,  91,  29,  85,  15,  62,  71,  47,  81,  20 },
+    { 75, 14, 33,  11,  99,  42,  59,  39,  96,  62,  91,   0,  82,  26,  87,  49,  58,  55,  40,  81 },
+    { 48, 37, 82,  97,  38,  90,  66,  32,  41,  57,  29,  82,   0,  15,  93,  44,  85,  28,  47,  74 },
+    { 60, 80, 93,  71,  67,  52,  81,  28,  84,  43,  85,  26,  15,   0,  24,  61,  75,  87,  62,  49 },
+    { 13, 61, 24,  31,  91,  68,  24,  50,  13,  72,  15,  87,  93,  24,   0,  32,  29,  36,  91,  17 },
+    { 84, 27, 35,  96,  62,  47,  92,  31,  38,  94,  62,  49,  44,  61,  32,   0,  54,  73,  28,  45 },
+    { 91, 39, 90,  50,  26,  44,  37,  82,  67,  25,  71,  58,  85,  75,  29,  54,   0,  80,  95,  61 },
+    { 53, 56, 17,  22,  73,  86,  48,  74,  48,  34,  47,  55,  28,  87,  36,  73,  80,   0,  21,  60 },
+    { 74, 92, 98,  86,  45,  61,  80,  53,  70,  33,  81,  40,  47,  62,  91,  28,  95,  21,   0,  69 },
+    { 18, 59, 51,  34,  93,  72,  99,  40,  79,  65,  20,  81,  74,  49,  17,  45,  61,  60,  69,   0 },
 };
 */
 /*

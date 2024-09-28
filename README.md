@@ -17,11 +17,9 @@ This implementation currently uses fixed, 2D Arrays. An improvement could
 be made using a simple data structure to allocate memory dynamically - if I
 ever wanted to have the program take user input and spit out a path, this
 would be necessary. Maximum SIZE is (theoretically) 30, but anything over 25
-breaks printing. In order to run this with SIZE 25 I had to increase the
-stack limit (using ulimit) to 10gb (absurdly high). I suppose an improvement
-for the implementation could be made to just default to using the Nearest
-neighbor for anything over SIZE 15, since that worked in all cases (up to 30)
-without borking the stack.
+breaks printing. The Held-Karp dynamic programming array is huge (2^n), so it
+is allocated dynamically, and that routine takes a while to complete at n >
+20.
 
 TODOs/ideas: pretty printing the table with COLOR for the path, highlighting the
 costs in each step in different shades. Or having a [Press to continue]

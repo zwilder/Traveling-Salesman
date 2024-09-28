@@ -18,6 +18,7 @@
 * along with TSP.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <limits.h>
@@ -39,11 +40,9 @@
  * be made using a simple data structure to allocate memory dynamically - if I
  * ever wanted to have the program take user input and spit out a path, this
  * would be necessary. Maximum SIZE is (theoretically) 30, but anything over 25
- * breaks printing. In order to run this with SIZE 25 I had to increase the
- * stack limit (using ulimit) to 10gb (absurdly high). I suppose an improvement
- * for the implementation could be made to just default to using the Nearest
- * neighbor for anything over SIZE 15, since that worked in all cases (up to 30)
- * without borking the stack.
+ * breaks printing. The Held-Karp dynamic programming array is huge (2^n), so it
+ * is allocated dynamically, and that routine takes a while to complete at n >
+ * 20.
  *
  * An idea: pretty printing the table with COLOR for the path, highlighting the
  * costs in each step in different shades. Or having a [Press to continue]
@@ -52,7 +51,7 @@
  * are on as well. 
  */
 
-#define SIZE 6 
+#define SIZE 15
 
 void print_table(const int table[SIZE][SIZE]) {
     int x,y;
@@ -138,11 +137,28 @@ void held_karp(const int dist[SIZE][SIZE], int start) {
      *    dynamically - or if the points are on an X,Y grid calculating the
      *    distance (manhattan) instead of storing the costs.
      */
-    int dp[1 << SIZE][SIZE]; // 1 << SIZE is a neat way of saying 2 raised to the SIZE
-    int prev[1 << SIZE][SIZE];
+    int **dp;
+    int **prev;
+    //int dp[1 << SIZE][SIZE]; // 1 << SIZE is a neat way of saying 2 raised to the SIZE
+    //int prev[1 << SIZE][SIZE];
     int path[SIZE + 1];
     int subset, last, newcost, cost, end, i, cur, next;
     int result = INT_MAX;
+    // Allocate memory for dp/prev
+    dp = malloc((1 << SIZE) * sizeof(int *));
+    prev = malloc((1 << SIZE) * sizeof(int *));
+    if(!dp || !prev) {
+        printf("Failed to allocate memory for dp/prev!\n");
+        return;
+    }
+    for(i = 0; i < (1 << SIZE); i++) {
+        dp[i] = malloc(SIZE * sizeof(int));
+        prev[i] = malloc(SIZE * sizeof(int));
+        if(!(dp[i]) || !(prev[i])) {
+            printf("Failed to allocate memory for [%d]!\n",i);
+            return;
+        }
+    }
 
     // Start by filling the dp table with absurdly high values
     for(subset = 0; subset < (1 << SIZE); subset++) {
@@ -227,6 +243,22 @@ void held_karp(const int dist[SIZE][SIZE], int start) {
 
     // Print the results!
     print_path(path, result);
+
+    // Free allocated memory
+    for(i = 0; i < (1 << SIZE); i++) {
+        if(dp[i]) {
+            free(dp[i]);
+        }
+        if(prev[i]) {
+            free(prev[i]);
+        }
+    }
+    if(dp) {
+        free(dp);
+    }
+    if(prev) {
+        free(prev);
+    }
 }
 
 int main(int argc, char** argv) {
@@ -243,6 +275,7 @@ int main(int argc, char** argv) {
         {60, 90, 55, 25, 0} // E
     };
     */
+    /*
     // SIZE 6
     int dist[SIZE][SIZE] = {
         {  0,  10,  15,  30,  40,  50 },  // A
@@ -252,7 +285,7 @@ int main(int argc, char** argv) {
         { 40,  20,  50,  30,   0,  15 },  // E
         { 50,  60,  70,  80,  15,   0 }   // F
     };
-    /*
+    */
     // SIZE 15
     int dist[SIZE][SIZE] = {
         {  0,  10,  15,  30,  100,  200,  90,  120,  80,  110,  150,  70,  130,  160,  180 },  // A
@@ -271,9 +304,8 @@ int main(int argc, char** argv) {
         { 160, 60,  50,  35,  50,  10,  20,  60,  60,  80,  30,  25,  15,   0,  10 },  // N
         { 180, 80,  70,  50,  40,  15,  25,  80,  70,  90,  40,  35,  25,  10,   0 }   // O
     };
-    */
     /*
-    // Size 20 - Stack size needs to be increased for this to work
+    // Size 20 - Good example here of how much more efficient Held-Karp can be
     const int dist[SIZE][SIZE] = {
         { 0,  54,  72,  38,  81,  25,  97,  66,  89,  42,  32,  75,  48,  60,  13,  84,  91,  53,  74,  18 },
         { 54,  0,  64,  12,  95,  45,  23,  76,  85,  19,  71,  14,  37,  80,  61,  27,  39,  56,  92,  59 },
@@ -298,7 +330,8 @@ int main(int argc, char** argv) {
     };
     */
     /*
-    // Size 25 - Stack size needs to be absurdly large for this to work
+    // Size 25 - This is about as big as this implementation can handle before
+    // 'splodin. 
     int dist[SIZE][SIZE] = {
         { 0,  54,  72,  38,  81,  25,  97,  66,  89,  42,  32,  75,  48,  60,  13,  84,  91,  53,  74,  18,  99,  26,  62,  87,  44 },
         { 54,  0,  64,  12,  95,  45,  23,  76,  85,  19,  71,  14,  37,  80,  61,  27,  39,  56,  92,  59,  43,  72,  50,  30,  94 },
@@ -329,7 +362,7 @@ int main(int argc, char** argv) {
     */
     /*
     // Size 30 - This breaks the current implementation! I couldn't get it to
-    // run even maxing out the stack size. 
+    // run 
     int dist[SIZE][SIZE] = {
         {  0,  68,  55,  72,  58,  83,  97,  71,  76,  44,  90,  93,  35,  92,  66,  38,  81,  87,  84,  98,  63,  77,  69,  54,  85,  79,  94,  88,  50,  100 },
         { 68,   0,  47,  91,  76,  99,  73,  87,  44,  59,  68,  66,  91,  53,  40,  80,  73,  56,  42,  64,  98,  65,  62,  67,  72,  81,  58,  77,  88,  83 },

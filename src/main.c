@@ -27,6 +27,7 @@ int main(int argc, char** argv) {
      * screen, then step through and draw lines between points for the optimium
      * path... eventually.
      */
+    init_genrand(time(NULL)); // Seed the prng
     term_init(); // Initialize terminal interface
     init_screenbuf(); // Start screen buffer
     g_data = init_tsp_data(); // Global data

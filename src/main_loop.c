@@ -54,6 +54,7 @@ bool handle_events(void) {
         slist_push(&menu,"What is this?");
         slist_push(&menu,"Quit");
         clear_screen(g_screenbuf);
+        draw_box(0,0,SCREEN_WIDTH, SCREEN_HEIGHT, mt_rand(RED,WHITE), BLACK);
         ch = draw_menu_nobox(menu, WHITE, BLACK);
         switch(ch) {
             case 'a': 
@@ -116,18 +117,32 @@ void draw_example(void) {
     //Display pretty table
     yofs = SCREEN_HEIGHT/2 - SIZE/2; // offsets to center table
     xofs = SCREEN_WIDTH/2 - (SIZE*3);
-    xofs = 0;
-    yofs = 2;
+    xofs = 1;
+    yofs = 3;
     for(x = 0; x < SIZE; x++) {
         j = get_screen_index(4 + x + 3*x + xofs,yofs -1); 
-        g_screenbuf[j].fg = WHITE;
-        g_screenbuf[j].bg = BLACK;
+        hlrow = (x == g_data->hk_path->path[g_data->pos - 1]);
+        hlcol = (x == g_data->hk_path->path[g_data->pos]);
+        if(hlrow || hlcol) {
+            g_screenbuf[j].fg = rcolor + 8;
+            g_screenbuf[j].bg = BLACK;
+        } else {
+            g_screenbuf[j].fg = WHITE;
+            g_screenbuf[j].bg = BLACK;
+        }
         g_screenbuf[j].ch = 'A' + x;
     }
     for(y = 0; y < SIZE; y++) {
         j = get_screen_index(0+xofs,y+yofs);
-        g_screenbuf[j].fg = WHITE;
-        g_screenbuf[j].bg = BLACK;
+        hlrow = (y == g_data->hk_path->path[g_data->pos - 1]);
+        hlcol = (y == g_data->hk_path->path[g_data->pos]);
+        if(hlrow || hlcol) {
+            g_screenbuf[j].fg = rcolor + 8;
+            g_screenbuf[j].bg = BLACK;
+        } else {
+            g_screenbuf[j].fg = WHITE;
+            g_screenbuf[j].bg = BLACK;
+        }
         g_screenbuf[j].ch = 'A' + y;
         for(x = 0; x < SIZE; x++) {
             fstr[0] = '\0';
@@ -152,9 +167,13 @@ void draw_example(void) {
                 draw_colorstr(3 + x + 3*x + xofs,y+yofs,fstr,
                         BRIGHT_WHITE,rcolor);
             } else {
-                draw_colorstr(3 + x + 3*x + xofs,y+yofs,fstr,
-                        (x % 2)?BRIGHT_WHITE:WHITE,
-                        (x % 2)?BRIGHT_BLACK:BLACK);
+                if(0 == g_data->dist[x][y]) {
+                    draw_colorstr(3 + x + 3*x + xofs,y+yofs,fstr,
+                            BLACK, BLACK);
+                } else {
+                    draw_colorstr(3 + x + 3*x + xofs,y+yofs,fstr,
+                            WHITE, (x % 2)?BRIGHT_BLACK:BLACK);
+                }
             }
         }
     }
@@ -180,7 +199,7 @@ void draw_example(void) {
     g_screenbuf[j].bg = rcolor;
 
     fstr[0] = '\0';
-    snprintf(fstr, 180, "Current Pos: %d", g_data->pos);
+    snprintf(fstr, 180, "Current Pos: %d. Press [q] to quit.", g_data->pos);
     draw_str(0,SCREEN_HEIGHT-1,fstr);
 }
 

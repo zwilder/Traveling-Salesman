@@ -27,13 +27,6 @@
  * this into a "main_loop.c" file or some such later.
  */
 
-typedef enum {
-    STATE_MENU      = 0,
-    STATE_EXAMPLE   = 1,
-    STATE_INFO      = 2
-} AppStates;
-
-
 int g_state = STATE_MENU;
 TSP_Data *g_data = NULL;
 
@@ -76,14 +69,14 @@ bool handle_events(void) {
     bool result = true;
     SList *menu = NULL;
     if(g_state == STATE_MENU) {
-        menu = create_slist("The Traveling Salesman Problem! - Example Program");
+        menu = create_slist("The Traveling Salesman Problem! - An Example Program");
         slist_push(&menu,"Zach Wilder, 2024");
         slist_push(&menu,"abq");
         slist_push(&menu,"Generate new example");
         slist_push(&menu,"What is this?");
         slist_push(&menu,"Quit");
         clear_screen(g_screenbuf);
-        ch = draw_menu_basic(menu);
+        ch = draw_menu_nobox(menu, WHITE, BLACK);
         switch(ch) {
             case 'a': 
                 generate_example();
@@ -100,9 +93,6 @@ bool handle_events(void) {
         destroy_slist(&menu);
     } else if (g_state == STATE_INFO) {
         ch = kb_get_bl_char();
-        if(ch == 'q') {
-            result = false;
-        }
         g_state = STATE_MENU;
     } else if (g_state == STATE_EXAMPLE) {
         ch = kb_get_bl_char();
@@ -116,23 +106,96 @@ bool handle_events(void) {
 void update(void) {
     if(g_state == STATE_EXAMPLE) {
         // Advance to next step in path
+        g_data->pos += 1;
+        if(g_data->pos > SIZE) {
+            g_data->pos = 0;
+        }
     }
 }
 
 void draw(void) {
     clear_screen(g_screenbuf);
     SList *str = NULL, *strtmp = NULL;
-    int i = 0;
+    char fstr[180];
+    fstr[0] = '\0';
+    int i,j,k,rcolor,x,y,xofs,yofs;
+    bool hlrow,hlcol;
     if(g_state == STATE_EXAMPLE) {
-        draw_colorstr(0,0,"EXAMPLE STATE!",mt_rand(RED,WHITE),BLACK);
+        // Display title bar
+        rcolor = mt_rand(RED,CYAN);
+        snprintf(fstr, 180, "Distances with N=%d", SIZE);
+        j = strlen(fstr) / 2;
+        draw_hline(0,0,SCREEN_WIDTH,BRIGHT_BLACK);
+        draw_colorstr(SCREEN_WIDTH/2 - j, 0, fstr, rcolor + 8,BRIGHT_BLACK);
+
         //Display pretty table
+        yofs = SCREEN_HEIGHT/2 - SIZE/2; // offsets to center table
+        xofs = SCREEN_WIDTH/2 - (SIZE*3);
+        xofs = 0;
+        yofs = 2;
+        for(x = 0; x < SIZE; x++) {
+            j = get_screen_index(4 + x + 3*x + xofs,yofs -1); 
+            g_screenbuf[j].fg = WHITE;
+            g_screenbuf[j].bg = BLACK;
+            g_screenbuf[j].ch = 'A' + x;
+        }
+        for(y = 0; y < SIZE; y++) {
+            j = get_screen_index(0+xofs,y+yofs);
+            g_screenbuf[j].fg = WHITE;
+            g_screenbuf[j].bg = BLACK;
+            g_screenbuf[j].ch = 'A' + y;
+            for(x = 0; x < SIZE; x++) {
+                fstr[0] = '\0';
+                if(0 == g_data->dist[x][y]) {
+                    snprintf(fstr,180,"   ");
+                } else if(g_data->dist[x][y] < 10) {
+                    snprintf(fstr,180," %d ", g_data->dist[x][y]);
+                } else if (g_data->dist[x][y] < 100) {
+                    snprintf(fstr,180,"%d ", g_data->dist[x][y]);
+                } else if (g_data->dist[x][y] < 1000) {
+                    snprintf(fstr,180,"%d", g_data->dist[x][y]);
+                } else {
+                    snprintf(fstr,180," x ");
+                }
+                k = g_data->pos;
+                i = k - 1; // prev step
+                if(k == SIZE) k = 0;
+                hlrow = (x == g_data->hk_path->path[i]) && (g_data->hk_path->path[k] == y);
+                hlcol = (y == g_data->hk_path->path[i]) && (g_data->hk_path->path[k] == x);
+                // Highlight previous x,y and cur x,y
+                if(hlrow || hlcol) {
+                    draw_colorstr(3 + x + 3*x + xofs,y+yofs,fstr,
+                            BRIGHT_WHITE,rcolor);
+                } else {
+                    draw_colorstr(3 + x + 3*x + xofs,y+yofs,fstr,
+                            (x % 2)?BRIGHT_WHITE:WHITE,
+                            (x % 2)?BRIGHT_BLACK:BLACK);
+                }
+            }
+        }
 
         //Display paths under table (NN and HK)
+        fstr[0] = '\0';
+        snprintf(fstr,180,"Held-Karp Path Cost: %d", g_data->hk_path->cost);
+        draw_str(0, SCREEN_HEIGHT - 3, fstr);
+        fstr[0] = '\0';
+        for(i = 0; i < SIZE; i++) {
+            j = strlen(fstr);
+            snprintf(fstr + j, sizeof(fstr) - j, "%c%s", 'A' + g_data->hk_path->path[i],
+                    (i<SIZE-1)?"->":"->A");
+        }
+        draw_str(0, SCREEN_HEIGHT - 2, fstr);
 
         //Highlight current location in path, and current cost in table
         /* To highlight in table, From (previous step) is X and To (current step)
          * is Y
          */
+        j = get_screen_index(g_data->pos+(2*g_data->pos),SCREEN_HEIGHT - 2);
+        g_screenbuf[j].fg = BRIGHT_WHITE;
+        g_screenbuf[j].bg = rcolor;
+
+        str = create_slist("Current Pos: %d", g_data->pos);
+        draw_str(0,SCREEN_HEIGHT-1,str->data);
     } else if (g_state == STATE_INFO) {
         draw_hline(0,0,SCREEN_WIDTH,BRIGHT_BLACK);
         i = SCREEN_WIDTH/2 - 27;
@@ -173,17 +236,24 @@ void generate_example(void) {
     // Temporary, before we start using random numbers for x,y points and
     // finding distances using man_dist(A,B)
     int x,y;
-    // SIZE 6
-    if(!g_data) return;
+    // SIZE 15
     int dist[SIZE][SIZE] = {
-        {  0,  10,  15,  30,  40,  50 },  // A
-        { 10,   0,  35,  25,  20,  60 },  // B
-        { 15,  35,   0,  10,  50,  70 },  // C
-        { 30,  25,  10,   0,  30,  80 },  // D
-        { 40,  20,  50,  30,   0,  15 },  // E
-        { 50,  60,  70,  80,  15,   0 }   // F
+        {  0,  10,  15,  30,  100,  200,  90,  120,  80,  110,  150,  70,  130,  160,  180 },  // A
+        { 10,   0,  35,  25,  90,  180,  55,  70,  30,  50,  100,  90,  40,  60,  80 },  // B
+        { 15,  35,   0,  10,  85,  175,  45,  65,  55,  60,  90,  75,  20,  50,  70 },  // C
+        { 30,  25,  10,   0,  60,  150,  20,  40,  30,  45,  60,  55,  30,  35,  50 },  // D
+        { 100, 90,  85,  60,   0,  70,  80,  75,  60,  80,  90,  100,  55,  50,  40 },  // E
+        { 200, 180, 175, 150, 70,   0,  60,  90,  120,  50,  40,  30,  20,  10,  15 },  // F
+        { 90,  55,  45,  20,  80,  60,   0,  20,  30,  40,  50,  70,  30,  20,  25 },  // G
+        { 120, 70,  65,  40,  75,  90,  20,   0,  50,  10,  15,  30,  45,  60,  80 },  // H
+        { 80,  30,  55,  30,  60,  120,  30,  50,   0,  15,  25,  35,  45,  60,  70 },  // I
+        { 110, 50,  60,  45,  80,  50,  40,  10,  15,   0,  30,  60,  70,  80,  90 },  // J
+        { 150, 100,  90,  60,  90,  40,  50,  15,  25,  30,   0,  10,  20,  30,  40 },  // K
+        { 70,  90,  75,  55,  100, 30,  70,  30,  35,  60,  10,   0,  30,  25,  35 },  // L
+        { 130, 40,  20,  30,  55,  20,  30,  45,  45,  70,  20,  30,   0,  15,  25 },  // M
+        { 160, 60,  50,  35,  50,  10,  20,  60,  60,  80,  30,  25,  15,   0,  10 },  // N
+        { 180, 80,  70,  50,  40,  15,  25,  80,  70,  90,  40,  35,  25,  10,   0 }   // O
     };
-
     for(x = 0; x < SIZE; x++) {
         for(y = 0; y < SIZE; y++) {
             g_data->dist[x][y] = dist[x][y];
@@ -194,7 +264,7 @@ void generate_example(void) {
     //(This doesn't show up at all if it goes quick, but for large SIZE it looks
     //nice)
     clear_screen(g_screenbuf);
-    draw_colorstr(g_screenW/2 - 6, g_screenH, 
+    draw_colorstr(SCREEN_WIDTH/2 - 6, SCREEN_HEIGHT / 2, 
             "L O A D I N G", 
             mt_rand(BRIGHT_BLACK, BRIGHT_WHITE), BLACK);
     draw_screen(g_screenbuf);

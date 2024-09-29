@@ -257,7 +257,7 @@ TSP_Data* init_tsp_data(void) {
     }
     data->hk_path = NULL;
     data->nn_path = NULL;
-    data->pos = 0;
+    data->pos = -1;
     return data;
 }
 

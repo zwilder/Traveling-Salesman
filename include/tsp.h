@@ -20,7 +20,7 @@
 #ifndef TSP_H
 #define TSP_H
 
-#define SIZE 6
+#define SIZE 15
 
 /*****
  * System
@@ -62,6 +62,12 @@ struct TSP_Data {
     int pos;
 };
 
+typedef enum {
+    STATE_MENU      = 0,
+    STATE_EXAMPLE   = 1,
+    STATE_INFO      = 2
+} AppStates;
+
 /*****
  * TSP Functions
  *****/
@@ -77,4 +83,9 @@ int find_nearest_neighbor(const int cur, const int table[SIZE][SIZE], const bool
 void nearest_neighbor(const int dist[SIZE][SIZE]);
 TSP_Path* held_karp(int **dist, int start);
 
+/*****
+ * Globals
+ *****/
+extern int g_state;
+extern TSP_Data *g_data;
 #endif //TSP_H

@@ -20,6 +20,11 @@
 #ifndef TSP_H
 #define TSP_H
 
+/*****
+ * If SIZE >16 it breaks printing with the default SCREEN_WIDTH/SCREEN_HEIGHT
+ * (80x24). If you want to change SIZE higher than 16, you should change those
+ * too
+ *****/
 #define SIZE 15
 
 /*****
@@ -79,8 +84,8 @@ void destroy_tsp_data(TSP_Data *data);
 
 void print_table(const int table[SIZE][SIZE]);
 void print_path(const int path[SIZE], int cost);
-int find_nearest_neighbor(const int cur, const int table[SIZE][SIZE], const bool visited[SIZE]);
-void nearest_neighbor(const int dist[SIZE][SIZE]);
+int find_nearest_neighbor(const int cur, int **table, const bool visited[SIZE]);
+TSP_Path* nearest_neighbor(int **dist);
 TSP_Path* held_karp(int **dist, int start);
 
 bool main_loop(void);

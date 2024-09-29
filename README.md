@@ -28,8 +28,4 @@ backward - B to C is the same as C to B, etc). At 20 locations this is
 eight hundred eighty billion, eight hundred sixty-seven million, three hundred
 sixty thousand possible combinations. 
 
-TODOs/ideas: pretty printing the table with COLOR for the path, highlighting the
-costs in each step in different shades. Or having a [Press to continue]
-prompt and inverting the fg/bg colors for each step... I could have the path
-printed below the table (centered of course) and then invert which step we
-are on as well. 
+![Example](ex.png)

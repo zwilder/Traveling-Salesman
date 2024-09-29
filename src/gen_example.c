@@ -22,9 +22,18 @@
 
 void generate_example(void) {
     // Make a distance table
+    //Print L O A D I N G in center of screen
+    //(This doesn't show up at all if it goes quick, but for large SIZE it looks
+    //nice)
+    clear_screen(g_screenbuf);
+    draw_colorstr(SCREEN_WIDTH/2 - 6, SCREEN_HEIGHT / 2, 
+            "L O A D I N G", 
+            mt_rand(BRIGHT_BLACK, BRIGHT_WHITE), BLACK);
+    draw_screen(g_screenbuf);
+
     // Temporary, before we start using random numbers for x,y points and
     // finding distances using man_dist(A,B)
-    int x,y;
+    int i,x,y;
     // SIZE 15
     int dist[SIZE][SIZE] = {
         {  0,  10,  15,  30,  100,  200,  90,  120,  80,  110,  150,  70,  130,  160,  180 },  // A
@@ -43,31 +52,22 @@ void generate_example(void) {
         { 160, 60,  50,  35,  50,  10,  20,  60,  60,  80,  30,  25,  15,   0,  10 },  // N
         { 180, 80,  70,  50,  40,  15,  25,  80,  70,  90,  40,  35,  25,  10,   0 }   // O
     };
+    Vec2i *points = malloc(SIZE * sizeof(Vec2i));
+    for(i = 0; i < SIZE; i++) {
+        points[i].x = mt_rand(0,100);
+        points[i].y = mt_rand(0,100);
+    }
     for(x = 0; x < SIZE; x++) {
         for(y = 0; y < SIZE; y++) {
-            g_data->dist[x][y] = dist[x][y];
+            i = man_dist(points[x],points[y]);
+            g_data->dist[x][y] = i;
         }
     }
 
-    //Print L O A D I N G in center of screen
-    //(This doesn't show up at all if it goes quick, but for large SIZE it looks
-    //nice)
-    clear_screen(g_screenbuf);
-    draw_colorstr(SCREEN_WIDTH/2 - 6, SCREEN_HEIGHT / 2, 
-            "L O A D I N G", 
-            mt_rand(BRIGHT_BLACK, BRIGHT_WHITE), BLACK);
-    draw_screen(g_screenbuf);
     //Generate paths
     g_data->hk_path = held_karp(g_data->dist,0);
-    
-    //TSP_Path *hkpath = held_karp(dist, 0);
-    //destroy_tsp_path(hkpath);
-    //print_table(dist);
-    //printf("Nearest Neighbor Heuristic:\n");
-    //nearest_neighbor(dist);
-    //printf("Held-Karp Algorithm:\n");
-    //held_karp(dist, 0);
-
+    g_data->nn_path = nearest_neighbor(g_data->dist);
+    free(points);
 }
 
 /*

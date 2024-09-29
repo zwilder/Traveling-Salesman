@@ -43,7 +43,7 @@ void print_path(const int path[SIZE], int cost) {
     }
 }
 
-int find_nearest_neighbor(const int cur, const int table[SIZE][SIZE], const bool visited[SIZE]) {
+int find_nearest_neighbor(const int cur, int **table, const bool visited[SIZE]) {
     // Return the node with the lowest cost 
     int i = 0;
     int cost = 999;
@@ -59,7 +59,7 @@ int find_nearest_neighbor(const int cur, const int table[SIZE][SIZE], const bool
     return next;
 }
 
-void nearest_neighbor(const int dist[SIZE][SIZE]) {
+TSP_Path* nearest_neighbor(int **dist) {
     /*
      * Nearest Neighbor Heuristic Algorithm
      * Quick and easy approach to solving the TSP - knowing where we start, all
@@ -86,7 +86,8 @@ void nearest_neighbor(const int dist[SIZE][SIZE]) {
     }
     cost += dist[cur][0]; // Add in the cost of the return
 
-    print_path(path, cost);
+    //print_path(path, cost);
+    return make_tsp_path(path,cost);
 }
 
 TSP_Path* held_karp(int **dist, int start) {

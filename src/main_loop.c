@@ -31,6 +31,7 @@ void draw_info(void);
 
 bool main_loop(void) {
     bool running = true;
+    g_data = init_tsp_data(); // Global data
     // Main Loop
     scr_clear();
     draw(); // This advances with keypresses, so need to draw the screen before entering loop
@@ -39,6 +40,7 @@ bool main_loop(void) {
         update();
         draw();
     }
+    destroy_tsp_data(g_data); // Cleanup global data
     return true;
 }
 
@@ -47,10 +49,10 @@ bool handle_events(void) {
     bool result = true;
     SList *menu = NULL;
     if(g_state == STATE_MENU) {
-        menu = create_slist("The Traveling Salesman Problem! - An Example Program");
+        menu = create_slist("The Traveling Salesman Problem!");
         slist_push(&menu,"Zach Wilder, 2024");
         slist_push(&menu,"abq");
-        slist_push(&menu,"Generate new example");
+        slist_push(&menu,"Generate example");
         slist_push(&menu,"What is this?");
         slist_push(&menu,"Quit");
         clear_screen(g_screenbuf);
@@ -75,8 +77,16 @@ bool handle_events(void) {
         g_state = STATE_MENU;
     } else if (g_state == STATE_EXAMPLE) {
         ch = kb_get_bl_char();
-        if(ch == 'q') {
-            result = false;
+        switch(ch) {
+            case 'q': result = false; break;
+            case 'n':
+                //reset g_data
+                destroy_tsp_data(g_data); // Cleanup global data
+                g_data = init_tsp_data(); // Global data
+                //generate example
+                generate_example();
+                break;
+            default: break;
         }
     }
     return result;
@@ -180,9 +190,22 @@ void draw_example(void) {
 
     //Display paths under table (NN and HK)
     fstr[0] = '\0';
+    snprintf(fstr,180,"Nearest-Neighbor Path Cost: %d", g_data->nn_path->cost);
+    draw_str(0, SCREEN_HEIGHT - 5, fstr);
+    fstr[0] = ' ';
+    fstr[1] = '\0';
+    for(i = 0; i < SIZE; i++) {
+        j = strlen(fstr);
+        snprintf(fstr + j, sizeof(fstr) - j, "%c%s", 'A' + g_data->nn_path->path[i],
+                (i<SIZE-1)?"->":"->A");
+    }
+    draw_str(0, SCREEN_HEIGHT - 4, fstr);
+
+    fstr[0] = '\0';
     snprintf(fstr,180,"Held-Karp Path Cost: %d", g_data->hk_path->cost);
     draw_str(0, SCREEN_HEIGHT - 3, fstr);
-    fstr[0] = '\0';
+    fstr[0] = ' ';
+    fstr[1] = '\0';
     for(i = 0; i < SIZE; i++) {
         j = strlen(fstr);
         snprintf(fstr + j, sizeof(fstr) - j, "%c%s", 'A' + g_data->hk_path->path[i],
@@ -194,13 +217,14 @@ void draw_example(void) {
     /* To highlight in table, From (previous step) is X and To (current step)
      * is Y
      */
-    j = get_screen_index(g_data->pos+(2*g_data->pos),SCREEN_HEIGHT - 2);
+    j = get_screen_index(1+g_data->pos+(2*g_data->pos),SCREEN_HEIGHT - 2);
     g_screenbuf[j].fg = BRIGHT_WHITE;
     g_screenbuf[j].bg = rcolor;
 
     fstr[0] = '\0';
-    snprintf(fstr, 180, "Current Pos: %d. Press [q] to quit.", g_data->pos);
-    draw_str(0,SCREEN_HEIGHT-1,fstr);
+    snprintf(fstr, 180, "[n]ew example, [q]uit. Any other key to advance pos.");
+    draw_hline(0,SCREEN_HEIGHT-1,SCREEN_WIDTH, BRIGHT_BLACK);
+    draw_colorstr(SCREEN_WIDTH/2 - 26,SCREEN_HEIGHT-1,fstr,BLACK,BRIGHT_BLACK);
 }
 
 void draw_info(void) {

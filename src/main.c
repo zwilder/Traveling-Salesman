@@ -30,11 +30,9 @@ int main(int argc, char** argv) {
     init_genrand(time(NULL)); // Seed the prng
     term_init(); // Initialize terminal interface
     init_screenbuf(); // Start screen buffer
-    g_data = init_tsp_data(); // Global data
 
     main_loop(); // Main loop, obviously
 
-    destroy_tsp_data(g_data); // Cleanup global data
     close_screenbuf(); // Close the screen buffer
     term_close(); // Return the terminal to the user
     return 0;

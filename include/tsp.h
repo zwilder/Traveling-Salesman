@@ -83,6 +83,8 @@ int find_nearest_neighbor(const int cur, const int table[SIZE][SIZE], const bool
 void nearest_neighbor(const int dist[SIZE][SIZE]);
 TSP_Path* held_karp(int **dist, int start);
 
+bool main_loop(void);
+void generate_example(void);
 /*****
  * Globals
  *****/

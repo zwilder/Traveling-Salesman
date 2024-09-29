@@ -114,28 +114,34 @@ void draw(void) {
 
 void draw_example(void) {
     char fstr[180];
-    int i,j,k,rcolor,x,y,xofs,yofs;
-    bool hlrow,hlcol;
+    int i,j,k,hkcolor,nncolor,x,y,xofs,yofs;
+    bool hkrow,hkcol,nnrow,nncol;
     fstr[0] = '\0';
+    hkcolor = mt_rand(RED,CYAN);
+    nncolor = hkcolor;
+    while(nncolor == hkcolor) {
+        nncolor = mt_rand(RED,CYAN);
+    }
+
     // Display title bar
-    rcolor = mt_rand(RED,CYAN);
     snprintf(fstr, 180, "Distances with N=%d", SIZE);
     j = strlen(fstr) / 2;
     draw_hline(0,0,SCREEN_WIDTH,BRIGHT_BLACK);
-    draw_colorstr(SCREEN_WIDTH/2 - j, 0, fstr, rcolor + 8,BRIGHT_BLACK);
+    draw_colorstr(SCREEN_WIDTH/2 - j, 0, fstr, BRIGHT_WHITE,BRIGHT_BLACK);
 
     //Display pretty table
     yofs = SCREEN_HEIGHT/2 - SIZE/2; // offsets to center table
     xofs = SCREEN_WIDTH/2 - (SIZE*3);
     xofs = 1;
     yofs = 3;
+    // Headers for top triangle
     for(x = 0; x < SIZE; x++) {
         j = get_screen_index(4 + x + 3*x + xofs,yofs -1); 
-        hlrow = (x == g_data->hk_path->path[g_data->pos - 1]);
-        hlcol = (x == g_data->hk_path->path[g_data->pos]);
-        if(hlrow || hlcol) {
-            g_screenbuf[j].fg = rcolor + 8;
-            g_screenbuf[j].bg = BLACK;
+        hkrow = (x == g_data->hk_path->path[g_data->pos - 1]);
+        hkcol = (x == g_data->hk_path->path[g_data->pos]);
+        if(hkrow || hkcol) {
+            g_screenbuf[j].bg = hkcolor + 8;
+            g_screenbuf[j].fg = BLACK;
         } else {
             g_screenbuf[j].fg = WHITE;
             g_screenbuf[j].bg = BLACK;
@@ -143,19 +149,23 @@ void draw_example(void) {
         g_screenbuf[j].ch = 'A' + x;
     }
     for(y = 0; y < SIZE; y++) {
+        //Headers for bottom triangle
         j = get_screen_index(0+xofs,y+yofs);
-        hlrow = (y == g_data->hk_path->path[g_data->pos - 1]);
-        hlcol = (y == g_data->hk_path->path[g_data->pos]);
-        if(hlrow || hlcol) {
-            g_screenbuf[j].fg = rcolor + 8;
-            g_screenbuf[j].bg = BLACK;
+        nnrow = (y == g_data->nn_path->path[g_data->pos - 1]);
+        nncol = (y == g_data->nn_path->path[g_data->pos]);
+        if(nnrow || nncol) {
+            g_screenbuf[j].bg = nncolor + 8;
+            g_screenbuf[j].fg = BLACK;
         } else {
             g_screenbuf[j].fg = WHITE;
             g_screenbuf[j].bg = BLACK;
         }
         g_screenbuf[j].ch = 'A' + y;
+        //The dist data in the rows
         for(x = 0; x < SIZE; x++) {
             fstr[0] = '\0';
+            //Put the number in the right spot - centered in the 3 char wide
+            //column
             if(0 == g_data->dist[x][y]) {
                 snprintf(fstr,180,"   ");
             } else if(g_data->dist[x][y] < 10) {
@@ -165,17 +175,30 @@ void draw_example(void) {
             } else if (g_data->dist[x][y] < 1000) {
                 snprintf(fstr,180,"%d", g_data->dist[x][y]);
             } else {
+                // If for some reason, theres a 4 digit number in dist, this
+                // replaces it with an x
                 snprintf(fstr,180," x ");
             }
+            // Highlight previous x,y and cur x,y
             k = g_data->pos;
             i = k - 1; // prev step
             if(k == SIZE) k = 0;
-            hlrow = (x == g_data->hk_path->path[i]) && (g_data->hk_path->path[k] == y);
-            hlcol = (y == g_data->hk_path->path[i]) && (g_data->hk_path->path[k] == x);
-            // Highlight previous x,y and cur x,y
-            if(hlrow || hlcol) {
+            hkrow = (x == g_data->hk_path->path[i]) && (g_data->hk_path->path[k] == y);
+            hkcol = (y == g_data->hk_path->path[i]) && (g_data->hk_path->path[k] == x);
+            nnrow = (x == g_data->nn_path->path[i]) && (g_data->nn_path->path[k] == y);
+            nncol = (y == g_data->nn_path->path[i]) && (g_data->nn_path->path[k] == x);
+            /* What is REALLY neat is that this highlights the NN Path on the
+             * bottom triangle, and the HK Path on the top triangle. 
+             * if x >= y : Top triangle (including diagonal
+             * if x < y : Bottom triangle
+             * if x == y : Diagonal
+             */
+            if((hkrow || hkcol) && (x > y)) {
                 draw_colorstr(3 + x + 3*x + xofs,y+yofs,fstr,
-                        BRIGHT_WHITE,rcolor);
+                        BRIGHT_WHITE,hkcolor);
+            } else if((nnrow || nncol) && (x < y)) {
+                draw_colorstr(3 + x + 3*x + xofs,y+yofs,fstr,
+                        BRIGHT_WHITE,nncolor);
             } else {
                 if(0 == g_data->dist[x][y]) {
                     draw_colorstr(3 + x + 3*x + xofs,y+yofs,fstr,
@@ -214,12 +237,17 @@ void draw_example(void) {
     draw_str(0, SCREEN_HEIGHT - 2, fstr);
 
     //Highlight current location in path, and current cost in table
-    /* To highlight in table, From (previous step) is X and To (current step)
-     * is Y
-     */
-    j = get_screen_index(1+g_data->pos+(2*g_data->pos),SCREEN_HEIGHT - 2);
+    //HK
+    x = 1 + g_data->pos + (2 *g_data->pos);
+    y = SCREEN_HEIGHT - 2;
+    j = get_screen_index(x,y);
     g_screenbuf[j].fg = BRIGHT_WHITE;
-    g_screenbuf[j].bg = rcolor;
+    g_screenbuf[j].bg = hkcolor;
+    //NN
+    y -= 2;
+    j = get_screen_index(x,y);
+    g_screenbuf[j].fg = BRIGHT_WHITE;
+    g_screenbuf[j].bg = nncolor;
 
     fstr[0] = '\0';
     snprintf(fstr, 180, "[n]ew example, [q]uit. Any other key to advance pos.");

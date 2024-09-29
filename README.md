@@ -28,4 +28,4 @@ backward - B to C is the same as C to B, etc). At 20 locations this is
 eight hundred eighty billion, eight hundred sixty-seven million, three hundred
 sixty thousand possible combinations. 
 
-![Example](ex.png)
+![Example](ex.jpg)

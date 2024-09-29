@@ -82,17 +82,33 @@ void destroy_tsp_path(TSP_Path *path);
 TSP_Data* init_tsp_data(void);
 void destroy_tsp_data(TSP_Data *data);
 
-void print_table(const int table[SIZE][SIZE]);
-void print_path(const int path[SIZE], int cost);
+/*****
+ * Nearest Neighbor Functions
+ * nearestneighbor.c
+ *****/
 int find_nearest_neighbor(const int cur, int **table, const bool visited[SIZE]);
 TSP_Path* nearest_neighbor(int **dist);
+
+/*****
+ * Held-Karp Functions
+ * heldkarp.c
+ *****/
 TSP_Path* held_karp(int **dist, int start);
 
-bool main_loop(void);
-void generate_example(void);
 /*****
- * Globals
+ * main_loop.c
+ *****/
+bool main_loop(void);
+
+/*****
+ * gen_example.c
+ *****/
+void generate_example(void);
+
+/*****
+ * Global variables
  *****/
 extern int g_state;
 extern TSP_Data *g_data;
+
 #endif //TSP_H

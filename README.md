@@ -10,22 +10,20 @@ Solutions:
 shortest path (Averages about 25% less efficient than an exact solution)
 - Held-Karp Algorithm O(n^2 * 2n) - Exact solution
 
-For this program, I'll assume that all Nodes are connected to every other
-Node (Graph is fully connected).
+For this program, I've assumed that all Nodes are connected to every other
+Node (the graph is fully connected).
 
-This implementation currently uses fixed, 2D Arrays. An improvement could
-be made using a simple data structure to allocate memory dynamically - if I
-ever wanted to have the program take user input and spit out a path, this
-would be necessary. Maximum SIZE is (theoretically) 30, but anything over 25
-breaks printing. The Held-Karp dynamic programming array is huge (2^n), so it
-is allocated dynamically, and that routine takes a while to complete at n >
-20.
+The important part (the Held-Karp implementation) is in src/heldkarp.c.
+Shockingly "simple" for the amount of heavy lifting it has to do!
 
-Fun note: For N locations, there are N!/(2^N) solutions to this problem
+Fun fact: For N locations, there are N!/(2^N) solutions to this problem
 (assuming the distance between two individual locations is the same forward as
 backward - B to C is the same as C to B, etc). At 20 locations this is
 2,375,880,867,360,000 - or two quadrillion, three hundred seventy-five trillion,
 eight hundred eighty billion, eight hundred sixty-seven million, three hundred
 sixty thousand possible combinations. 
+
+This project uses bits and pieces from my toolbox project and Cards project -
+mostly for the super snazzy colored terminal output.
 
 ![Example](ex.jpg)
